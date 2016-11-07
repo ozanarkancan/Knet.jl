@@ -1,4 +1,4 @@
-import Base: sqrt, exp, log, sin, tanh, -, abs, abs2, sign
+import Base: sqrt, exp, log, sin, tanh, -, abs, abs2, sign, transpose, transpose!
 
 cuda1 = [
 "sqrt",
@@ -173,3 +173,41 @@ function logsumexp(x,d...)
 end
 
 @primitive logsumexp(x,d...),dy,y  (dy .* exp(x .- y))
+
+function transpose!{T}(y::KnetArray{T}, x::KnetArray{T})
+    if ndims(x) == 1
+	m = size(x, 1)
+	n = 1
+    elseif ndims(x) == 2
+	m,n = size(x)
+    else
+        error("transpose not implemented for $(typeof(x)).")
+    end
+
+    alpha = T[1.0]
+    beta = T[0.0]
+    if T<:Float32
+        @cuda(cublas, cublasSgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 0, m, n, alpha, x, n, beta, T[0], m, y, m)
+    elseif T<:Float64
+	@cuda(cublas, cublasDgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 0, m, n, alpha, x, n, beta, T[0], n, y, m)
+    else
+	error("$T not supported")
+    end
+    return y
+end
+
+
+function transpose{T}(x::KnetArray{T})
+    if ndims(x) == 1
+        m = size(x, 1)
+        n = 1
+    elseif ndims(x) == 2
+	m,n = size(x)
+    else
+        error("transpose not implemented for $(typeof(x)).")
+    end
+    y = KnetArray(zeros(eltype(x), n,m))
+    transpose!(y, x)
+end
+
+export transpose, transpose!
