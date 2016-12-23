@@ -187,9 +187,9 @@ function transpose!{T}(y::KnetArray{T}, x::KnetArray{T})
     alpha = T[1.0]
     beta = T[0.0]
     if T<:Float32
-        @cuda(cublas, cublasSgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 0, m, n, alpha, x, n, beta, T[0], m, y, m)
+        @cuda(cublas, cublasSgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 1, n, m, alpha, x, m, beta, x, m, y, n)
     elseif T<:Float64
-	@cuda(cublas, cublasDgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 0, m, n, alpha, x, n, beta, T[0], n, y, m)
+	@cuda(cublas, cublasDgeam, (Cptr, UInt32, UInt32, Cint, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Ptr{T}, Cint, Ptr{T}, Cint), cublashandle, 1, 1, n, m, alpha, x, m, beta, x, m, y, n)
     else
 	error("$T not supported")
     end
